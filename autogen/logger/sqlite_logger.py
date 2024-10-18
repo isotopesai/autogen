@@ -6,6 +6,7 @@ import os
 import sqlite3
 import threading
 import uuid
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Tuple, TypeVar, Union
 
 from openai import AzureOpenAI, OpenAI
@@ -15,6 +16,12 @@ from autogen.logger.base_logger import BaseLogger
 from autogen.logger.logger_utils import get_current_ts, to_dict
 
 from .base_logger import LLMConfig
+
+class CustomJSONEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, Path):
+            return str(obj)
+        return super().default(obj)
 
 if TYPE_CHECKING:
     from autogen import Agent, ConversableAgent, OpenAIWrapper
@@ -306,7 +313,7 @@ class SqliteLogger(BaseLogger):
             self.session_id,
             agent.name if hasattr(agent, "name") and agent.name is not None else "",
             type(agent).__name__,
-            json.dumps(args),
+            json.dumps(args, cls=CustomJSONEncoder),
             get_current_ts(),
         )
         self._run_query(query=query, args=args)
