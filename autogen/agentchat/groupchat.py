@@ -147,6 +147,7 @@ class GroupChat:
     select_speaker_auto_model_client_cls: Optional[Union[ModelClient, List[ModelClient]]] = None
     select_speaker_auto_llm_config: Optional[Union[Dict, Literal[False]]] = None
     role_for_select_speaker_messages: Optional[str] = "system"
+    select_speaker_last_n_messages: Optional[int] = None
 
     _VALID_SPEAKER_SELECTION_METHODS = ["auto", "manual", "random", "round_robin"]
     _VALID_SPEAKER_TRANSITIONS_TYPE = ["allowed", "disallowed", None]
@@ -542,12 +543,32 @@ class GroupChat:
             selected_agent = self.random_select_speaker(graph_eligible_agents)
         else:  # auto
             selected_agent = None
+            # Create a deep copy of messages to avoid modifying original
+            filtered_messages = []
+            # Define fields to filter out
+            filter_fields = [
+                "tool_calls",
+                "tool_responses",
+                "function_call",
+                "function_response"
+            ]
+            # Process each message
             select_speaker_messages = self.messages.copy()
-            # If last message is a tool call or function call, blank the call so the api doesn't throw
-            if select_speaker_messages[-1].get("function_call", False):
-                select_speaker_messages[-1] = dict(select_speaker_messages[-1], function_call=None)
-            if select_speaker_messages[-1].get("tool_calls", False):
-                select_speaker_messages[-1] = dict(select_speaker_messages[-1], tool_calls=None)
+            for message in select_speaker_messages:
+                # Remove specified fields if they exist
+                found = False
+                for field in filter_fields:
+                    if message.get(field, False):
+                        found = True
+                        break
+                if not found:
+                    filtered_messages.append(message)
+
+            # If last_n is specified, return only the last N messages
+            if self.select_speaker_last_n_messages is not None:
+                select_speaker_messages = filtered_messages[-self.select_speaker_last_n_messages:]
+            else:
+                select_speaker_messages = filtered_messages
         return selected_agent, graph_eligible_agents, select_speaker_messages
 
     def select_speaker(self, last_speaker: Agent, selector: ConversableAgent) -> Agent:
