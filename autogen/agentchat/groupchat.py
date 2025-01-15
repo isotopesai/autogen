@@ -1206,6 +1206,7 @@ class GroupChatManager(ConversableAgent):
                     raise
             except NoEligibleSpeaker:
                 # No eligible speaker, terminate the conversation
+                logger.warning("No eligible speaker found. Terminating the conversation.")
                 break
 
             if reply is None:
@@ -1287,6 +1288,7 @@ class GroupChatManager(ConversableAgent):
                     raise
             except NoEligibleSpeaker:
                 # No eligible speaker, terminate the conversation
+                logger.warning("No eligible speaker found. Terminating the conversation.")
                 break
 
             if reply is None:
