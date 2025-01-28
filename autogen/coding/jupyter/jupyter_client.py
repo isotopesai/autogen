@@ -157,6 +157,9 @@ class JupyterKernelClient:
             return cast(Dict[str, Any], json.loads(data))
         except websocket.WebSocketTimeoutException:
             return None
+        except BrokenPipeError:
+            # this is a non-silent error
+            return None
 
     def wait_for_ready(self, timeout_seconds: Optional[float] = None) -> bool:
         message_id = self._send_message(content={}, channel="shell", message_type="kernel_info_request")
