@@ -149,6 +149,9 @@ class JupyterKernelClient:
         self._websocket.settimeout(timeout_seconds)
         try:
             data = self._websocket.recv()
+            if not data:
+                # getting 0 bytes is usually a silent EOF
+                return None
             if isinstance(data, bytes):
                 data = data.decode("utf-8")
             return cast(Dict[str, Any], json.loads(data))

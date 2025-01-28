@@ -89,7 +89,12 @@ class JupyterCodeExecutor(CodeExecutor):
         Returns:
             IPythonCodeResult: The result of the code execution.
         """
-        self._jupyter_kernel_client.wait_for_ready()
+        connected = self._jupyter_kernel_client.wait_for_ready()
+        if not connected:
+            # fresh connection but use the same kernel id
+            self._jupyter_client = JupyterClient(self._connection_info)
+            self._jupyter_kernel_client = self._jupyter_client.get_kernel_client(self._kernel_id)
+
         outputs = []
         output_files = []
         for code_block in code_blocks:
